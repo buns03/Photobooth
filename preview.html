@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Review & Download Photos</title>
+  <link rel="stylesheet" href="css/preview.css" />
+  <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap"
+      rel="stylesheet"
+    />
+</head>
+<body>
+
+  <h1>Review & Download Your Photos</h1>
+
+  <div id="controls">
+    <label for="borderColorPicker">Choose Border Color:</label>
+    <input type="color" id="borderColorPicker" value="#000000" />
+  </div>
+
+  <div id="photoReviewContainer">
+    <div id="photoLayout">
+      <div class="inner-wrapper">
+        <!-- Images will be injected here by JS -->
+      </div>
+    </div>
+
+    <input type="text" id="captionInput" placeholder="Add a caption for all photos..." />
+    <div id="captionDisplay"></div>
+  </div>
+
+  <div id="downloadWrapper">
+    <button id="downloadBtn">Download All</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="script/preview.js"></script>
+
+</body>
+</html>

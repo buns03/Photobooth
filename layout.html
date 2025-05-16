@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Choose Layout</title>
+    <link rel="stylesheet" href="css/layout.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="title">Choose a Layout</h1>
+      <p class="subtitle">Select how your photos will be arranged on paper</p>
+
+      <div class="layout-options">
+        <button class="layout" onclick="selectLayout(1)">
+          <img src="css/assets/1x1.png" alt="1 Photo" />
+        </button>
+        <button class="layout" onclick="selectLayout(2)">
+          <img src="css/assets/2x2 (2).png" alt="2x2 Layout" />
+        </button>
+        <button class="layout" onclick="selectLayout(3)">
+          <img src="css/assets/3x3.png" alt="3x3 Layout" />
+        </button>
+        <button class="layout" onclick="selectLayout(4)">
+          <img src="css/assets/4x4.png" alt="4x4 Layout" />
+        </button>
+      </div>
+    </div>
+
+    <script>
+      function selectLayout(count) {
+        sessionStorage.setItem("layoutCount", count);
+        window.location.href = "photo.html"; // navigate to camera page
+      }
+    </script>
+  </body>
+</html>

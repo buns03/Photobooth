@@ -1,0 +1,68 @@
+body {
+  font-family: 'Poppins', sans-serif;
+  padding: 20px;
+  text-align: center;
+  background: #f5f5f5;
+}
+
+#photoReviewContainer {
+  max-width: 200px;
+  margin: 20px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#photoLayout {
+  display: inline-block; /* hug content tightly */
+  border: none;
+  padding: 20px 20px 60px 20px; /* thick bottom padding for caption area */
+  background-color: white; /* use the border color as bg */
+  position: relative;
+  box-sizing: content-box; /* border + padding outside content */
+  
+}
+
+#photoLayout img {
+   display: block;
+  max-width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+}
+
+/* Caption below photos */
+#captionDisplay {
+  position: absolute;
+  bottom: 20px;  /* enough space from bottom */
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-weight: lighter;
+  font-size: .8rem;
+  pointer-events: none;
+  user-select: none;
+  color: inherit; /* inherit from container */
+  padding: 0 10px; /* some side padding */
+  font-style: italic;
+}
+
+
+#captionInput {
+  margin-top: 15px;
+  width: 100%;
+  font-size: 1rem;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+
+#controls {
+  margin-bottom: 20px;
+}
+
+#downloadWrapper {
+  margin-top: 20px;
+}
