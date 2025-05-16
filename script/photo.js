@@ -56,9 +56,13 @@ function takePhoto() {
 
 function captureImage() {
   const canvas = document.createElement("canvas");
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  
+  const width = video.clientWidth;
+  const height = video.clientHeight;
 
+  canvas.width = width;
+  canvas.height = height;
+  
   const ctx = canvas.getContext("2d");
   ctx.filter = currentFilter;
 
