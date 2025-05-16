@@ -94,3 +94,18 @@ button:hover {
   justify-content: center;
   flex-wrap: wrap;
 }
+
+.mirrored-wrapper {
+  display: inline-block;
+  transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+}
+
+.mirrored-wrapper img {
+  transform: scaleX(-1);
+  -webkit-transform: scaleX(-1);
+  display: block;
+  max-width: 100%;
+  margin-bottom: 20px;
+}
+
