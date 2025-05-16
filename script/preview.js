@@ -103,3 +103,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   buildPhotos();
 });
+
+
+document.getElementById('retakeBtn').addEventListener('click', () => {
+  // Clear local/session storage or any saved state
+  localStorage.clear();
+  sessionStorage.clear();
+
+  // Navigate to layout.html
+  window.location.href = 'layout.html';
+});
+
+// Prevent navigating back to preview.html
+history.pushState(null, null, location.href);
+window.onpopstate = function () {
+  history.go(1);
+};
