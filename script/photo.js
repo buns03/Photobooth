@@ -85,13 +85,16 @@ function captureImage() {
   photoTaken++;
 
   if (photoTaken >= layoutCount) {
-    alert("Done! You can proceed.");
+  // Show toast
+  const toast = document.getElementById("successToast");
+  toast.classList.add("show");
 
-    // Redirect to review/download page after short delay
-    setTimeout(() => {
-      window.location.href = "preview.html"; // change filename if needed
-    }, 500);
-  }
+  // Redirect to review/download page after short delay
+  setTimeout(() => {
+    toast.classList.remove("show");
+    window.location.href = "preview.html"; // change filename if needed
+  }, 1500); // show toast for 1.5 seconds
+}
 }
 
 
