@@ -175,19 +175,6 @@ body {
     align-items: center;
   }
 
-  #camera {
-   width: 640px;
-    height: 480px;
-    border-radius: 10px;
-    transform: scaleX(-1);
-}
-
-  .camera-wrapper {
-  position: relative;
-  display: inline-block;
-  max-width: 100vw;
-  overflow-x: auto;
-}
 
   .filters {
     flex-wrap: wrap;
