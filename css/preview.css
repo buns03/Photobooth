@@ -24,12 +24,20 @@ body {
 }
 
 #photoLayout img {
-   display: block;
+  display: block;
   max-width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
   margin-bottom: 20px;
+
   transform: scaleX(-1);
+  -webkit-transform: scaleX(-1); /* Safari/older mobile */
+  -moz-transform: scaleX(-1);    /* Older Firefox */
+  -ms-transform: scaleX(-1);     /* Edge/IE */
+  -o-transform: scaleX(-1);      /* Old Opera */
+
+  backface-visibility: hidden; /* Helps on some devices */
+  will-change: transform;      /* Forces GPU acceleration */
 }
 
 /* Caption below photos */
