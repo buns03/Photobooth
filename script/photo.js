@@ -68,8 +68,28 @@ function captureImage() {
 
   ctx.translate(canvas.width, 0);
   ctx.scale(-1, 1);
-  
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+   const videoRatio = video.videoWidth / video.videoHeight;
+  const containerRatio = width / height;
+
+  let sx, sy, sWidth, sHeight;
+
+  if (containerRatio > videoRatio) {
+    // container wider than video, so video is cropped vertically
+    sWidth = video.videoWidth;
+    sHeight = video.videoWidth / containerRatio;
+    sx = 0;
+    sy = (video.videoHeight - sHeight) / 2;
+  } else {
+    // container taller than video, so video is cropped horizontally
+    sHeight = video.videoHeight;
+    sWidth = video.videoHeight * containerRatio;
+    sy = 0;
+    sx = (video.videoWidth - sWidth) / 2;
+  }
+
+  ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, width, height);
+  // ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
   const imgData = canvas.toDataURL("image/png");
 
