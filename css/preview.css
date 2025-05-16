@@ -29,6 +29,7 @@ body {
   margin: 0 auto;
   box-sizing: border-box;
   margin-bottom: 20px;
+  transform: scaleX(-1);
 }
 
 /* Caption below photos */
