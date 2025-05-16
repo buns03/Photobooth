@@ -37,35 +37,41 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function buildPhotos() {
-    photoLayout.innerHTML = ''; // clear all including previous captionDisplay
+  photoLayout.innerHTML = ''; // clear all including previous captionDisplay
 
-    // Append captionDisplay again inside photoLayout after clearing
-    photoLayout.appendChild(captionDisplay);
+  // Append captionDisplay again inside photoLayout after clearing
+  photoLayout.appendChild(captionDisplay);
 
-    photoLayout.style.backgroundColor = borderColorPicker.value;
+  photoLayout.style.backgroundColor = borderColorPicker.value;
 
-    // Adjust caption text color based on background
-    if (isColorDark(borderColorPicker.value)) {
-      captionDisplay.style.color = '#fff';
-    } else {
-      captionDisplay.style.color = '#000';
-    }
-
-    const photosToShow = photos.slice(0, layoutCount);
-    photosToShow.forEach((src, i) => {
-      const img = document.createElement('img');
-      img.src = src;
-      img.alt = `Photo ${i + 1}`;
-      photoLayout.appendChild(img);
-    });
-
-    // Wrap caption text in quotes on load if there is text
-    if (captionInput.value) {
-      captionDisplay.textContent = `"${captionInput.value}"`;
-    } else {
-      captionDisplay.textContent = '';
-    }
+  // Adjust caption text color based on background
+  if (isColorDark(borderColorPicker.value)) {
+    captionDisplay.style.color = '#fff';
+  } else {
+    captionDisplay.style.color = '#000';
   }
+
+  const photosToShow = photos.slice(0, layoutCount);
+  photosToShow.forEach((src, i) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'mirrored-wrapper';
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = `Photo ${i + 1}`;
+
+    wrapper.appendChild(img);
+    photoLayout.appendChild(wrapper);
+  });
+
+  // Wrap caption text in quotes on load if there is text
+  if (captionInput.value) {
+    captionDisplay.textContent = `"${captionInput.value}"`;
+  } else {
+    captionDisplay.textContent = '';
+  }
+}
+
 
   borderColorPicker.addEventListener('input', () => {
     photoLayout.style.backgroundColor = borderColorPicker.value;
