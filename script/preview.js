@@ -53,72 +53,64 @@ function takePhoto() {
   }, 1000);
 }
 
-
 function captureImage() {
   const displayWidth = video.clientWidth;
   const displayHeight = video.clientHeight;
 
-  const width = video.clientWidth;
-  const height = video.clientHeight;
+  const videoWidth = video.videoWidth;
+  const videoHeight = video.videoHeight;
 
+  const displayRatio = displayWidth / displayHeight;
+  const videoRatio = videoWidth / videoHeight;
+
+  // Create canvas at full video resolution
   const canvas = document.createElement("canvas");
-  
   canvas.width = videoWidth;
   canvas.height = videoHeight;
-  
   const ctx = canvas.getContext("2d");
   ctx.filter = currentFilter;
 
-  const displayRatio = displayWidth/displayHeight;
-  const videoRatio = videoWidth/videoHeight;
-
-  ctx.translate(canvas.width, 0);
+  // Mirror transform
+  ctx.translate(videoWidth, 0);
   ctx.scale(-1, 1);
 
-  const containerRatio = width / height;
+  // Draw mirrored video onto canvas
+  ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
 
-  let sx, sy, sWidth, sHeight;
-
-if (displayRatio > videoRatio) {
-    // display is wider than video -> crop top and bottom
+  // Determine cropping rectangle to match visible area
+  let sWidth, sHeight, sx, sy;
+  if (displayRatio > videoRatio) {
     sWidth = videoWidth;
     sHeight = videoWidth / displayRatio;
     sx = 0;
     sy = (videoHeight - sHeight) / 2;
   } else {
-    // display is taller than video -> crop sides
     sHeight = videoHeight;
     sWidth = videoHeight * displayRatio;
     sy = 0;
     sx = (videoWidth - sWidth) / 2;
   }
 
-  // Now create another canvas for the final visible area at full resolution
+  // Crop to a new canvas
   const outputCanvas = document.createElement("canvas");
   outputCanvas.width = sWidth;
   outputCanvas.height = sHeight;
   const outputCtx = outputCanvas.getContext("2d");
-
   outputCtx.filter = currentFilter;
+
   outputCtx.drawImage(canvas, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
 
   const imgData = outputCanvas.toDataURL("image/png");
-
-  // save or return imgData as needed
-
-  // Create image element for preview with border
   const img = new Image();
   img.src = imgData;
   img.className = "shot-preview";
 
   const borderedFrame = document.createElement("div");
   borderedFrame.className = "photo-border";
-  borderedFrame.style.borderColor = sessionStorage.getItem("borderColor") || "#000"; // default black
+  borderedFrame.style.borderColor = sessionStorage.getItem("borderColor") || "#000";
   borderedFrame.appendChild(img);
-
   shotsContainer.appendChild(borderedFrame);
 
-  // Save the captured photo data URL to sessionStorage array
   let photos = JSON.parse(sessionStorage.getItem("photosTaken")) || [];
   photos.push(imgData);
   sessionStorage.setItem("photosTaken", JSON.stringify(photos));
@@ -126,17 +118,15 @@ if (displayRatio > videoRatio) {
   photoTaken++;
 
   if (photoTaken >= layoutCount) {
-  // Show toast
-  const toast = document.getElementById("successToast");
-  toast.classList.add("show");
+    const toast = document.getElementById("successToast");
+    toast.classList.add("show");
+    setTimeout(() => {
+      toast.classList.remove("show");
+      window.location.href = "preview.html";
+    }, 1500);
+  }
+}
 
-  // Redirect to review/download page after short delay
-  setTimeout(() => {
-    toast.classList.remove("show");
-    window.location.href = "preview.html"; // change filename if needed
-  }, 1500); // show toast for 1.5 seconds
-}
-}
 
 
 
