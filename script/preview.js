@@ -1,202 +1,172 @@
-let layoutCount = parseInt(sessionStorage.getItem("layoutCount")) || 1;
-let photoTaken = 0;
-let currentFilter = 'none';
+document.addEventListener("DOMContentLoaded", () => {
+  let layoutCount = parseInt(sessionStorage.getItem("layoutCount")) || 1;
+  let photoTaken = 0;
+  let currentFilter = 'none';
 
-const video = document.getElementById("camera");
-const shotsContainer = document.getElementById("shots");
-const countdownDisplay = document.getElementById("countdown");
-const captureBtn = document.querySelector(".capture-btn");
-const flashOverlay = document.getElementById("flash");
-const layoutPreview = document.getElementById("layout-preview");
+  const video = document.getElementById("camera");
+  const shotsContainer = document.getElementById("shots");
+  const countdownDisplay = document.getElementById("countdown");
+  const captureBtn = document.querySelector(".capture-btn");
+  const flashOverlay = document.getElementById("flash");
+  const layoutPreview = document.getElementById("layout-preview");
 
-// Request camera access
-navigator.mediaDevices.getUserMedia({ video: true })
-  .then(stream => {
-    video.srcObject = stream;
-  })
-  .catch(err => {
-    alert("Camera access denied: " + err);
-  });
-
-function applyFilter(filter) {
-  currentFilter = filter;
-  video.style.filter = filter;
-}
-
-function takePhoto() {
-  if (photoTaken >= layoutCount) {
-    alert("All required photos have been taken!");
+  if (!video) {
+    console.error("Camera element not found.");
     return;
   }
 
-  captureBtn.disabled = true;
-  let countdown = 3;
-  countdownDisplay.textContent = countdown;
+  // Safe camera init
+  navigator.mediaDevices.getUserMedia({ video: true })
+    .then(stream => {
+      video.srcObject = stream;
+    })
+    .catch(err => {
+      alert("Camera access denied: " + err);
+    });
 
-  const countdownInterval = setInterval(() => {
-    countdown--;
-    if (countdown > 0) {
-      countdownDisplay.textContent = countdown;
-    } else {
-      clearInterval(countdownInterval);
-      countdownDisplay.textContent = "📸";
+  function applyFilter(filter) {
+    currentFilter = filter;
+    video.style.filter = filter;
+  }
 
-      flashOverlay.style.opacity = 1;
-
-      setTimeout(() => {
-        captureImage();
-        flashOverlay.style.opacity = 0;
-        countdownDisplay.textContent = "";
-        captureBtn.disabled = false;
-      }, 500);
+  function takePhoto() {
+    if (photoTaken >= layoutCount) {
+      alert("All required photos have been taken!");
+      return;
     }
-  }, 1000);
-}
 
-function captureImage() {
-  const displayWidth = video.clientWidth;
-  const displayHeight = video.clientHeight;
+    captureBtn.disabled = true;
+    let countdown = 3;
+    countdownDisplay.textContent = countdown;
 
-  const videoWidth = video.videoWidth;
-  const videoHeight = video.videoHeight;
+    const countdownInterval = setInterval(() => {
+      countdown--;
+      if (countdown > 0) {
+        countdownDisplay.textContent = countdown;
+      } else {
+        clearInterval(countdownInterval);
+        countdownDisplay.textContent = "📸";
+        flashOverlay.style.opacity = 1;
 
-  const displayRatio = displayWidth / displayHeight;
-  const videoRatio = videoWidth / videoHeight;
-
-  // Create canvas at full video resolution
-  const canvas = document.createElement("canvas");
-  canvas.width = videoWidth;
-  canvas.height = videoHeight;
-  const ctx = canvas.getContext("2d");
-  ctx.filter = currentFilter;
-
-  // Mirror transform
-  ctx.translate(videoWidth, 0);
-  ctx.scale(-1, 1);
-
-  // Draw mirrored video onto canvas
-  ctx.drawImage(video, 0, 0, videoWidth, videoHeight);
-
-  // Determine cropping rectangle to match visible area
-  let sWidth, sHeight, sx, sy;
-  if (displayRatio > videoRatio) {
-    sWidth = videoWidth;
-    sHeight = videoWidth / displayRatio;
-    sx = 0;
-    sy = (videoHeight - sHeight) / 2;
-  } else {
-    sHeight = videoHeight;
-    sWidth = videoHeight * displayRatio;
-    sy = 0;
-    sx = (videoWidth - sWidth) / 2;
+        setTimeout(() => {
+          captureImage();
+          flashOverlay.style.opacity = 0;
+          countdownDisplay.textContent = "";
+          captureBtn.disabled = false;
+        }, 500);
+      }
+    }, 1000);
   }
 
-  // Crop to a new canvas
-  const outputCanvas = document.createElement("canvas");
-  outputCanvas.width = sWidth;
-  outputCanvas.height = sHeight;
-  const outputCtx = outputCanvas.getContext("2d");
-  outputCtx.filter = currentFilter;
+  function captureImage() {
+    const displayWidth = video.clientWidth;
+    const displayHeight = video.clientHeight;
 
-  outputCtx.drawImage(canvas, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
+    const videoWidth = video.videoWidth;
+    const videoHeight = video.videoHeight;
 
-  const imgData = outputCanvas.toDataURL("image/png");
-  const img = new Image();
-  img.src = imgData;
-  img.className = "shot-preview";
+    const canvas = document.createElement("canvas");
+    canvas.width = videoWidth;
+    canvas.height = videoHeight;
 
-  const borderedFrame = document.createElement("div");
-  borderedFrame.className = "photo-border";
-  borderedFrame.style.borderColor = sessionStorage.getItem("borderColor") || "#000";
-  borderedFrame.appendChild(img);
-  shotsContainer.appendChild(borderedFrame);
+    const ctx = canvas.getContext("2d");
+    ctx.filter = currentFilter;
 
-  let photos = JSON.parse(sessionStorage.getItem("photosTaken")) || [];
-  photos.push(imgData);
-  sessionStorage.setItem("photosTaken", JSON.stringify(photos));
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
 
-  photoTaken++;
+    const displayRatio = displayWidth / displayHeight;
+    const videoRatio = videoWidth / videoHeight;
 
-  if (photoTaken >= layoutCount) {
-    const toast = document.getElementById("successToast");
-    toast.classList.add("show");
-    setTimeout(() => {
-      toast.classList.remove("show");
-      window.location.href = "preview.html";
-    }, 1500);
-  }
-}
+    let sx, sy, sWidth, sHeight;
 
+    if (displayRatio > videoRatio) {
+      sWidth = videoWidth;
+      sHeight = videoWidth / displayRatio;
+      sx = 0;
+      sy = (videoHeight - sHeight) / 2;
+    } else {
+      sHeight = videoHeight;
+      sWidth = videoHeight * displayRatio;
+      sy = 0;
+      sx = (videoWidth - sWidth) / 2;
+    }
 
+    const outputCanvas = document.createElement("canvas");
+    outputCanvas.width = sWidth;
+    outputCanvas.height = sHeight;
+    const outputCtx = outputCanvas.getContext("2d");
 
+    outputCtx.filter = currentFilter;
+    outputCtx.drawImage(canvas, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
 
-function renderFinalLayout() {
-  layoutPreview.innerHTML = "";
-  layoutPreview.style.display = "grid";
+    const imgData = outputCanvas.toDataURL("image/png");
 
-  if (layoutCount === 1) {
-    layoutPreview.style.gridTemplateColumns = "1fr";
-  } else if (layoutCount === 1) {
-    layoutPreview.style.gridTemplateColumns = "1fr 1fr";
-  } else if (layoutCount === 2) {
-    layoutPreview.style.gridTemplateColumns = "1fr 1fr";
-  } else if (layoutCount === 3) {
-    layoutPreview.style.gridTemplateColumns = "1fr 1fr 1fr";
-  } else if (layoutCount === 4) {
-    layoutPreview.style.gridTemplateColumns = "1fr 1fr 1fr";
-  } else {
-    layoutPreview.style.gridTemplateColumns = `repeat(${Math.ceil(Math.sqrt(layoutCount))}, 1fr)`;
-  }
-
-  document.querySelectorAll('.shot-preview').forEach(preview => {
     const img = new Image();
-    img.src = preview.src;
-    img.className = "layout-photo";
-    layoutPreview.appendChild(img);
+    img.src = imgData;
+    img.className = "shot-preview";
+
+    const borderedFrame = document.createElement("div");
+    borderedFrame.className = "photo-border";
+    borderedFrame.style.borderColor = sessionStorage.getItem("borderColor") || "#000";
+    borderedFrame.appendChild(img);
+
+    shotsContainer.appendChild(borderedFrame);
+
+    let photos = JSON.parse(sessionStorage.getItem("photosTaken")) || [];
+    photos.push(imgData);
+    sessionStorage.setItem("photosTaken", JSON.stringify(photos));
+
+    photoTaken++;
+
+    if (photoTaken >= layoutCount) {
+      const toast = document.getElementById("successToast");
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+        window.location.href = "preview.html";
+      }, 1500);
+    }
+  }
+
+  function renderFinalLayout() {
+    layoutPreview.innerHTML = "";
+    layoutPreview.style.display = "grid";
+
+    if (layoutCount === 1) {
+      layoutPreview.style.gridTemplateColumns = "1fr";
+    } else if (layoutCount === 2) {
+      layoutPreview.style.gridTemplateColumns = "1fr 1fr";
+    } else if (layoutCount === 3 || layoutCount === 4) {
+      layoutPreview.style.gridTemplateColumns = "1fr 1fr 1fr";
+    } else {
+      layoutPreview.style.gridTemplateColumns = `repeat(${Math.ceil(Math.sqrt(layoutCount))}, 1fr)`;
+    }
+
+    document.querySelectorAll('.shot-preview').forEach(preview => {
+      const img = new Image();
+      img.src = preview.src;
+      img.className = "layout-photo";
+      layoutPreview.appendChild(img);
+    });
+
+    layoutPreview.scrollIntoView({ behavior: "smooth" });
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.target.classList.contains('shot-preview')) {
+      const modal = document.getElementById('photo-modal');
+      const modalImg = document.getElementById('modal-img');
+      modalImg.src = e.target.src;
+      modal.style.display = 'flex';
+    }
   });
 
-  layoutPreview.scrollIntoView({ behavior: "smooth" });
-}
+  document.getElementById('close-modal').addEventListener('click', () => {
+    document.getElementById('photo-modal').style.display = 'none';
+  });
 
-async function startCamera() {
-  try {
-    const constraints = {
-      video: {
-        facingMode: "environment",
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-        advanced: [{ torch: true }]
-      }
-    };
-
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    video.srcObject = stream;
-
-    const track = stream.getVideoTracks()[0];
-    const capabilities = track.getCapabilities();
-
-    if (capabilities.torch) {
-      await track.applyConstraints({ advanced: [{ torch: true }] });
-      console.log("Torch enabled");
-    } else {
-      console.log("Torch capability not supported");
-    }
-  } catch (err) {
-    console.error("Camera/torch error:", err);
-  }
-}
-
-document.addEventListener('click', function (e) {
-  if (e.target.classList.contains('shot-preview')) {
-    const modal = document.getElementById('photo-modal');
-    const modalImg = document.getElementById('modal-img');
-    modalImg.src = e.target.src;
-    modal.style.display = 'flex';
-  }
+  // Expose takePhoto and applyFilter globally
+  window.takePhoto = takePhoto;
+  window.applyFilter = applyFilter;
 });
-
-document.getElementById('close-modal').addEventListener('click', () => {
-  document.getElementById('photo-modal').style.display = 'none';
-});
-
-
