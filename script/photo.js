@@ -60,15 +60,36 @@ function takePhoto() {
 }
 
 function captureImage() {
-  const videoAspectRatio = video.videoWidth / video.videoHeight;
-  const displayAspectRatio = video.clientWidth / video.clientHeight;
+  const visibleWidth = video.clientWidth;
+  const visibleHeight = video.clientHeight;
 
-  // We'll use the actual video resolution to get higher quality
+  const videoWidth = video.videoWidth;
+  const videoHeight = video.videoHeight;
+
+  const visibleAspectRatio = visibleWidth / visibleHeight;
+  const videoAspectRatio = videoWidth / videoHeight;
+
+  // Calculate cropped area on the video feed (in full resolution)
+  let sx, sy, sWidth, sHeight;
+
+  if (visibleAspectRatio > videoAspectRatio) {
+    // Video is too tall, crop vertically
+    sWidth = videoWidth;
+    sHeight = videoWidth / visibleAspectRatio;
+    sx = 0;
+    sy = (videoHeight - sHeight) / 2;
+  } else {
+    // Video is too wide, crop horizontally
+    sHeight = videoHeight;
+    sWidth = videoHeight * visibleAspectRatio;
+    sy = 0;
+    sx = (videoWidth - sWidth) / 2;
+  }
+
+  // Set canvas size to cropped size (preserves resolution and aspect ratio)
   const canvas = document.createElement("canvas");
-
-  // Match canvas size to video feed resolution
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  canvas.width = sWidth;
+  canvas.height = sHeight;
 
   const ctx = canvas.getContext("2d");
   ctx.filter = currentFilter;
@@ -77,26 +98,9 @@ function captureImage() {
   ctx.translate(canvas.width, 0);
   ctx.scale(-1, 1);
 
-  let sx, sy, sWidth, sHeight;
-
-  if (displayAspectRatio > videoAspectRatio) {
-    // Visible container is wider than the camera feed
-    sWidth = video.videoWidth;
-    sHeight = video.videoWidth / displayAspectRatio;
-    sx = 0;
-    sy = (video.videoHeight - sHeight) / 2;
-  } else {
-    // Visible container is taller than the camera feed
-    sHeight = video.videoHeight;
-    sWidth = video.videoHeight * displayAspectRatio;
-    sy = 0;
-    sx = (video.videoWidth - sWidth) / 2;
-  }
-
-  // Draw only the visible portion
+  // Draw only the cropped part into the new canvas
   ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
 
-  // Create image from canvas
   const imgData = canvas.toDataURL("image/png");
 
   const img = new Image();
@@ -109,7 +113,6 @@ function captureImage() {
   borderedFrame.appendChild(img);
   shotsContainer.appendChild(borderedFrame);
 
-  // Save to session
   let photos = JSON.parse(sessionStorage.getItem("photosTaken")) || [];
   photos.push(imgData);
   sessionStorage.setItem("photosTaken", JSON.stringify(photos));
@@ -125,6 +128,7 @@ function captureImage() {
     }, 1500);
   }
 }
+
 
 
 
