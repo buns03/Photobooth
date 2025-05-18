@@ -1,172 +1,127 @@
-document.addEventListener("DOMContentLoaded", () => {
-  let layoutCount = parseInt(sessionStorage.getItem("layoutCount")) || 1;
-  let photoTaken = 0;
-  let currentFilter = 'none';
+document.addEventListener('DOMContentLoaded', () => {
+  const photos = JSON.parse(sessionStorage.getItem('photosTaken')) || [];
+  const layoutCount = parseInt(sessionStorage.getItem('layoutCount')) || 1;
+  const photoLayout = document.getElementById('photoLayout');
+  const borderColorPicker = document.getElementById('borderColorPicker');
+  const downloadBtn = document.getElementById('downloadBtn');
 
-  const video = document.getElementById("camera");
-  const shotsContainer = document.getElementById("shots");
-  const countdownDisplay = document.getElementById("countdown");
-  const captureBtn = document.querySelector(".capture-btn");
-  const flashOverlay = document.getElementById("flash");
-  const layoutPreview = document.getElementById("layout-preview");
+  // Get or create caption input and display inside photoReviewContainer but outside photoLayout
+  let captionInput = document.getElementById('captionInput');
+  let captionDisplay = document.getElementById('captionDisplay');
 
-  if (!video) {
-    console.error("Camera element not found.");
-    return;
+  if (!captionInput) {
+    captionInput = document.createElement('input');
+    captionInput.type = 'text';
+    captionInput.placeholder = 'Add a caption for all photos...';
+    captionInput.id = 'captionInput';
+
+    captionDisplay = document.createElement('div');
+    captionDisplay.id = 'captionDisplay';
+
+    // Append captionInput outside photoLayout (you can keep this)
+    photoLayout.parentElement.appendChild(captionInput);
   }
 
-  // Safe camera init
-  navigator.mediaDevices.getUserMedia({ video: true })
-    .then(stream => {
-      video.srcObject = stream;
-    })
-    .catch(err => {
-      alert("Camera access denied: " + err);
-    });
-
-  function applyFilter(filter) {
-    currentFilter = filter;
-    video.style.filter = filter;
+  // Append captionDisplay INSIDE photoLayout so it is captured together
+  if (!captionDisplay.parentElement || captionDisplay.parentElement !== photoLayout) {
+    photoLayout.appendChild(captionDisplay);
   }
 
-  function takePhoto() {
-    if (photoTaken >= layoutCount) {
-      alert("All required photos have been taken!");
-      return;
-    }
-
-    captureBtn.disabled = true;
-    let countdown = 3;
-    countdownDisplay.textContent = countdown;
-
-    const countdownInterval = setInterval(() => {
-      countdown--;
-      if (countdown > 0) {
-        countdownDisplay.textContent = countdown;
-      } else {
-        clearInterval(countdownInterval);
-        countdownDisplay.textContent = "📸";
-        flashOverlay.style.opacity = 1;
-
-        setTimeout(() => {
-          captureImage();
-          flashOverlay.style.opacity = 0;
-          countdownDisplay.textContent = "";
-          captureBtn.disabled = false;
-        }, 500);
-      }
-    }, 1000);
+  function isColorDark(color) {
+    const c = color.charAt(0) === '#' ? color.substring(1) : color;
+    const r = parseInt(c.substr(0, 2), 16);
+    const g = parseInt(c.substr(2, 2), 16);
+    const b = parseInt(c.substr(4, 2), 16);
+    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+    return luminance < 128;
   }
 
-  function captureImage() {
-    const displayWidth = video.clientWidth;
-    const displayHeight = video.clientHeight;
+  function buildPhotos() {
+  photoLayout.innerHTML = ''; // clear all including previous captionDisplay
 
-    const videoWidth = video.videoWidth;
-    const videoHeight = video.videoHeight;
+  // Append captionDisplay again inside photoLayout after clearing
+  photoLayout.appendChild(captionDisplay);
 
-    const canvas = document.createElement("canvas");
-    canvas.width = videoWidth;
-    canvas.height = videoHeight;
+  photoLayout.style.backgroundColor = borderColorPicker.value;
 
-    const ctx = canvas.getContext("2d");
-    ctx.filter = currentFilter;
+  // Adjust caption text color based on background
+  if (isColorDark(borderColorPicker.value)) {
+    captionDisplay.style.color = '#fff';
+  } else {
+    captionDisplay.style.color = '#000';
+  }
 
-    ctx.translate(canvas.width, 0);
-    ctx.scale(-1, 1);
+  const photosToShow = photos.slice(0, layoutCount);
+  photosToShow.forEach((src, i) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'mirrored-wrapper';
 
-    const displayRatio = displayWidth / displayHeight;
-    const videoRatio = videoWidth / videoHeight;
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = `Photo ${i + 1}`;
 
-    let sx, sy, sWidth, sHeight;
+    wrapper.appendChild(img);
+    photoLayout.appendChild(wrapper);
+  });
 
-    if (displayRatio > videoRatio) {
-      sWidth = videoWidth;
-      sHeight = videoWidth / displayRatio;
-      sx = 0;
-      sy = (videoHeight - sHeight) / 2;
+  // Wrap caption text in quotes on load if there is text
+  if (captionInput.value) {
+    captionDisplay.textContent = `"${captionInput.value}"`;
+  } else {
+    captionDisplay.textContent = '';
+  }
+}
+
+
+  borderColorPicker.addEventListener('input', () => {
+    photoLayout.style.backgroundColor = borderColorPicker.value;
+    if (isColorDark(borderColorPicker.value)) {
+      captionDisplay.style.color = '#fff';
     } else {
-      sHeight = videoHeight;
-      sWidth = videoHeight * displayRatio;
-      sy = 0;
-      sx = (videoWidth - sWidth) / 2;
-    }
-
-    const outputCanvas = document.createElement("canvas");
-    outputCanvas.width = sWidth;
-    outputCanvas.height = sHeight;
-    const outputCtx = outputCanvas.getContext("2d");
-
-    outputCtx.filter = currentFilter;
-    outputCtx.drawImage(canvas, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
-
-    const imgData = outputCanvas.toDataURL("image/png");
-
-    const img = new Image();
-    img.src = imgData;
-    img.className = "shot-preview";
-
-    const borderedFrame = document.createElement("div");
-    borderedFrame.className = "photo-border";
-    borderedFrame.style.borderColor = sessionStorage.getItem("borderColor") || "#000";
-    borderedFrame.appendChild(img);
-
-    shotsContainer.appendChild(borderedFrame);
-
-    let photos = JSON.parse(sessionStorage.getItem("photosTaken")) || [];
-    photos.push(imgData);
-    sessionStorage.setItem("photosTaken", JSON.stringify(photos));
-
-    photoTaken++;
-
-    if (photoTaken >= layoutCount) {
-      const toast = document.getElementById("successToast");
-      toast.classList.add("show");
-      setTimeout(() => {
-        toast.classList.remove("show");
-        window.location.href = "preview.html";
-      }, 1500);
-    }
-  }
-
-  function renderFinalLayout() {
-    layoutPreview.innerHTML = "";
-    layoutPreview.style.display = "grid";
-
-    if (layoutCount === 1) {
-      layoutPreview.style.gridTemplateColumns = "1fr";
-    } else if (layoutCount === 2) {
-      layoutPreview.style.gridTemplateColumns = "1fr 1fr";
-    } else if (layoutCount === 3 || layoutCount === 4) {
-      layoutPreview.style.gridTemplateColumns = "1fr 1fr 1fr";
-    } else {
-      layoutPreview.style.gridTemplateColumns = `repeat(${Math.ceil(Math.sqrt(layoutCount))}, 1fr)`;
-    }
-
-    document.querySelectorAll('.shot-preview').forEach(preview => {
-      const img = new Image();
-      img.src = preview.src;
-      img.className = "layout-photo";
-      layoutPreview.appendChild(img);
-    });
-
-    layoutPreview.scrollIntoView({ behavior: "smooth" });
-  }
-
-  document.addEventListener('click', function (e) {
-    if (e.target.classList.contains('shot-preview')) {
-      const modal = document.getElementById('photo-modal');
-      const modalImg = document.getElementById('modal-img');
-      modalImg.src = e.target.src;
-      modal.style.display = 'flex';
+      captionDisplay.style.color = '#000';
     }
   });
 
-  document.getElementById('close-modal').addEventListener('click', () => {
-    document.getElementById('photo-modal').style.display = 'none';
+  captionInput.addEventListener('input', (e) => {
+    // Always wrap caption text in double quotes
+    captionDisplay.textContent = e.target.value ? `"${e.target.value}"` : '';
   });
 
-  // Expose takePhoto and applyFilter globally
-  window.takePhoto = takePhoto;
-  window.applyFilter = applyFilter;
+  downloadBtn.addEventListener('click', () => {
+    downloadBtn.disabled = true;
+    downloadBtn.textContent = 'Processing...';
+
+    // Capture photoLayout only, since captionDisplay is inside it
+    html2canvas(photoLayout).then(canvas => {
+      const link = document.createElement('a');
+      link.download = 'my_photos.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+
+      downloadBtn.disabled = false;
+      downloadBtn.textContent = 'Download All';
+    }).catch(() => {
+      alert('Failed to generate image. Try again.');
+      downloadBtn.disabled = false;
+      downloadBtn.textContent = 'Download All';
+    });
+  });
+
+  buildPhotos();
 });
+
+
+document.getElementById('retakeBtn').addEventListener('click', () => {
+  // Clear local/session storage or any saved state
+  localStorage.clear();
+  sessionStorage.clear();
+
+  // Navigate to layout.html
+  window.location.href = 'layout.html';
+});
+
+// Prevent navigating back to preview.html
+history.pushState(null, null, location.href);
+window.onpopstate = function () {
+  history.go(1);
+};
