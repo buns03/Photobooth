@@ -60,49 +60,52 @@ function takePhoto() {
 }
 
 function captureImage() {
-  const visibleWidth = video.clientWidth;
-  const visibleHeight = video.clientHeight;
-
   const videoWidth = video.videoWidth;
   const videoHeight = video.videoHeight;
+  const displayWidth = video.clientWidth;
+  const displayHeight = video.clientHeight;
 
-  const visibleAspectRatio = visibleWidth / visibleHeight;
+  const visibleAspectRatio = displayWidth / displayHeight;
   const videoAspectRatio = videoWidth / videoHeight;
 
-  // Calculate cropped area on the video feed (in full resolution)
   let sx, sy, sWidth, sHeight;
 
   if (visibleAspectRatio > videoAspectRatio) {
-    // Video is too tall, crop vertically
+    // Container is wider than video, crop vertically
     sWidth = videoWidth;
     sHeight = videoWidth / visibleAspectRatio;
     sx = 0;
     sy = (videoHeight - sHeight) / 2;
   } else {
-    // Video is too wide, crop horizontally
+    // Container is taller than video, crop horizontally
     sHeight = videoHeight;
     sWidth = videoHeight * visibleAspectRatio;
     sy = 0;
     sx = (videoWidth - sWidth) / 2;
   }
 
-  // Set canvas size to cropped size (preserves resolution and aspect ratio)
+  // 🔥 High-quality canvas size — match source crop size
   const canvas = document.createElement("canvas");
-  canvas.width = sWidth;
-  canvas.height = sHeight;
+ const upscaleFactor = 2; // or 3 for even higher resolution
+canvas.width = sWidth * upscaleFactor;
+canvas.height = sHeight * upscaleFactor;
 
   const ctx = canvas.getContext("2d");
   ctx.filter = currentFilter;
 
-  // Mirror if needed
+  // Mirror horizontally if needed
   ctx.translate(canvas.width, 0);
-  ctx.scale(-1, 1);
+ctx.scale(-1 * upscaleFactor, upscaleFactor);
 
-  // Draw only the cropped part into the new canvas
-  ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(
+    video,
+    sx, sy, sWidth, sHeight,   // from video
+    0, 0, canvas.width, canvas.height // to canvas (same size = no scale)
+  );
 
   const imgData = canvas.toDataURL("image/png");
 
+  // Image preview
   const img = new Image();
   img.src = imgData;
   img.className = "shot-preview";
@@ -111,6 +114,7 @@ function captureImage() {
   borderedFrame.className = "photo-border";
   borderedFrame.style.borderColor = sessionStorage.getItem("borderColor") || "#000";
   borderedFrame.appendChild(img);
+
   shotsContainer.appendChild(borderedFrame);
 
   let photos = JSON.parse(sessionStorage.getItem("photosTaken")) || [];
@@ -128,6 +132,7 @@ function captureImage() {
     }, 1500);
   }
 }
+
 
 
 
