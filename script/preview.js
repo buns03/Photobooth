@@ -1,127 +1,212 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const photos = JSON.parse(sessionStorage.getItem('photosTaken')) || [];
-  const layoutCount = parseInt(sessionStorage.getItem('layoutCount')) || 1;
-  const photoLayout = document.getElementById('photoLayout');
-  const borderColorPicker = document.getElementById('borderColorPicker');
-  const downloadBtn = document.getElementById('downloadBtn');
+let layoutCount = parseInt(sessionStorage.getItem("layoutCount")) || 1;
+let photoTaken = 0;
+let currentFilter = 'none';
 
-  // Get or create caption input and display inside photoReviewContainer but outside photoLayout
-  let captionInput = document.getElementById('captionInput');
-  let captionDisplay = document.getElementById('captionDisplay');
+const video = document.getElementById("camera");
+const shotsContainer = document.getElementById("shots");
+const countdownDisplay = document.getElementById("countdown");
+const captureBtn = document.querySelector(".capture-btn");
+const flashOverlay = document.getElementById("flash");
+const layoutPreview = document.getElementById("layout-preview");
 
-  if (!captionInput) {
-    captionInput = document.createElement('input');
-    captionInput.type = 'text';
-    captionInput.placeholder = 'Add a caption for all photos...';
-    captionInput.id = 'captionInput';
-
-    captionDisplay = document.createElement('div');
-    captionDisplay.id = 'captionDisplay';
-
-    // Append captionInput outside photoLayout (you can keep this)
-    photoLayout.parentElement.appendChild(captionInput);
-  }
-
-  // Append captionDisplay INSIDE photoLayout so it is captured together
-  if (!captionDisplay.parentElement || captionDisplay.parentElement !== photoLayout) {
-    photoLayout.appendChild(captionDisplay);
-  }
-
-  function isColorDark(color) {
-    const c = color.charAt(0) === '#' ? color.substring(1) : color;
-    const r = parseInt(c.substr(0, 2), 16);
-    const g = parseInt(c.substr(2, 2), 16);
-    const b = parseInt(c.substr(4, 2), 16);
-    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-    return luminance < 128;
-  }
-
-  function buildPhotos() {
-  photoLayout.innerHTML = ''; // clear all including previous captionDisplay
-
-  // Append captionDisplay again inside photoLayout after clearing
-  photoLayout.appendChild(captionDisplay);
-
-  photoLayout.style.backgroundColor = borderColorPicker.value;
-
-  // Adjust caption text color based on background
-  if (isColorDark(borderColorPicker.value)) {
-    captionDisplay.style.color = '#fff';
-  } else {
-    captionDisplay.style.color = '#000';
-  }
-
-  const photosToShow = photos.slice(0, layoutCount);
-  photosToShow.forEach((src, i) => {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'mirrored-wrapper';
-
-    const img = document.createElement('img');
-    img.src = src;
-    img.alt = `Photo ${i + 1}`;
-
-    wrapper.appendChild(img);
-    photoLayout.appendChild(wrapper);
+// Request camera access
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => {
+    video.srcObject = stream;
+  })
+  .catch(err => {
+    alert("Camera access denied: " + err);
   });
 
-  // Wrap caption text in quotes on load if there is text
-  if (captionInput.value) {
-    captionDisplay.textContent = `"${captionInput.value}"`;
-  } else {
-    captionDisplay.textContent = '';
+function applyFilter(filter) {
+  currentFilter = filter;
+  video.style.filter = filter;
+}
+
+function takePhoto() {
+  if (photoTaken >= layoutCount) {
+    alert("All required photos have been taken!");
+    return;
   }
+
+  captureBtn.disabled = true;
+  let countdown = 3;
+  countdownDisplay.textContent = countdown;
+
+  const countdownInterval = setInterval(() => {
+    countdown--;
+    if (countdown > 0) {
+      countdownDisplay.textContent = countdown;
+    } else {
+      clearInterval(countdownInterval);
+      countdownDisplay.textContent = "📸";
+
+      flashOverlay.style.opacity = 1;
+
+      setTimeout(() => {
+        captureImage();
+        flashOverlay.style.opacity = 0;
+        countdownDisplay.textContent = "";
+        captureBtn.disabled = false;
+      }, 500);
+    }
+  }, 1000);
 }
 
 
-  borderColorPicker.addEventListener('input', () => {
-    photoLayout.style.backgroundColor = borderColorPicker.value;
-    if (isColorDark(borderColorPicker.value)) {
-      captionDisplay.style.color = '#fff';
+function captureImage() {
+  const displayWidth = video.clientWidth;
+  const displayHeight = video.clientHeight;
+
+  const width = video.clientWidth;
+  const height = video.clientHeight;
+
+  const canvas = document.createElement("canvas");
+  
+  canvas.width = videoWidth;
+  canvas.height = videoHeight;
+  
+  const ctx = canvas.getContext("2d");
+  ctx.filter = currentFilter;
+
+  const displayRatio = displayWidth/displayHeight;
+  const videoRatio = videoWidth/videoHeight;
+
+  ctx.translate(canvas.width, 0);
+  ctx.scale(-1, 1);
+
+  const containerRatio = width / height;
+
+  let sx, sy, sWidth, sHeight;
+
+if (displayRatio > videoRatio) {
+    // display is wider than video -> crop top and bottom
+    sWidth = videoWidth;
+    sHeight = videoWidth / displayRatio;
+    sx = 0;
+    sy = (videoHeight - sHeight) / 2;
+  } else {
+    // display is taller than video -> crop sides
+    sHeight = videoHeight;
+    sWidth = videoHeight * displayRatio;
+    sy = 0;
+    sx = (videoWidth - sWidth) / 2;
+  }
+
+  // Now create another canvas for the final visible area at full resolution
+  const outputCanvas = document.createElement("canvas");
+  outputCanvas.width = sWidth;
+  outputCanvas.height = sHeight;
+  const outputCtx = outputCanvas.getContext("2d");
+
+  outputCtx.filter = currentFilter;
+  outputCtx.drawImage(canvas, sx, sy, sWidth, sHeight, 0, 0, sWidth, sHeight);
+
+  const imgData = outputCanvas.toDataURL("image/png");
+
+  // save or return imgData as needed
+
+  // Create image element for preview with border
+  const img = new Image();
+  img.src = imgData;
+  img.className = "shot-preview";
+
+  const borderedFrame = document.createElement("div");
+  borderedFrame.className = "photo-border";
+  borderedFrame.style.borderColor = sessionStorage.getItem("borderColor") || "#000"; // default black
+  borderedFrame.appendChild(img);
+
+  shotsContainer.appendChild(borderedFrame);
+
+  // Save the captured photo data URL to sessionStorage array
+  let photos = JSON.parse(sessionStorage.getItem("photosTaken")) || [];
+  photos.push(imgData);
+  sessionStorage.setItem("photosTaken", JSON.stringify(photos));
+
+  photoTaken++;
+
+  if (photoTaken >= layoutCount) {
+  // Show toast
+  const toast = document.getElementById("successToast");
+  toast.classList.add("show");
+
+  // Redirect to review/download page after short delay
+  setTimeout(() => {
+    toast.classList.remove("show");
+    window.location.href = "preview.html"; // change filename if needed
+  }, 1500); // show toast for 1.5 seconds
+}
+}
+
+
+
+function renderFinalLayout() {
+  layoutPreview.innerHTML = "";
+  layoutPreview.style.display = "grid";
+
+  if (layoutCount === 1) {
+    layoutPreview.style.gridTemplateColumns = "1fr";
+  } else if (layoutCount === 1) {
+    layoutPreview.style.gridTemplateColumns = "1fr 1fr";
+  } else if (layoutCount === 2) {
+    layoutPreview.style.gridTemplateColumns = "1fr 1fr";
+  } else if (layoutCount === 3) {
+    layoutPreview.style.gridTemplateColumns = "1fr 1fr 1fr";
+  } else if (layoutCount === 4) {
+    layoutPreview.style.gridTemplateColumns = "1fr 1fr 1fr";
+  } else {
+    layoutPreview.style.gridTemplateColumns = `repeat(${Math.ceil(Math.sqrt(layoutCount))}, 1fr)`;
+  }
+
+  document.querySelectorAll('.shot-preview').forEach(preview => {
+    const img = new Image();
+    img.src = preview.src;
+    img.className = "layout-photo";
+    layoutPreview.appendChild(img);
+  });
+
+  layoutPreview.scrollIntoView({ behavior: "smooth" });
+}
+
+async function startCamera() {
+  try {
+    const constraints = {
+      video: {
+        facingMode: "environment",
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        advanced: [{ torch: true }]
+      }
+    };
+
+    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = stream;
+
+    const track = stream.getVideoTracks()[0];
+    const capabilities = track.getCapabilities();
+
+    if (capabilities.torch) {
+      await track.applyConstraints({ advanced: [{ torch: true }] });
+      console.log("Torch enabled");
     } else {
-      captionDisplay.style.color = '#000';
+      console.log("Torch capability not supported");
     }
-  });
+  } catch (err) {
+    console.error("Camera/torch error:", err);
+  }
+}
 
-  captionInput.addEventListener('input', (e) => {
-    // Always wrap caption text in double quotes
-    captionDisplay.textContent = e.target.value ? `"${e.target.value}"` : '';
-  });
+document.addEventListener('click', function (e) {
+  if (e.target.classList.contains('shot-preview')) {
+    const modal = document.getElementById('photo-modal');
+    const modalImg = document.getElementById('modal-img');
+    modalImg.src = e.target.src;
+    modal.style.display = 'flex';
+  }
+});
 
-  downloadBtn.addEventListener('click', () => {
-    downloadBtn.disabled = true;
-    downloadBtn.textContent = 'Processing...';
-
-    // Capture photoLayout only, since captionDisplay is inside it
-    html2canvas(photoLayout).then(canvas => {
-      const link = document.createElement('a');
-      link.download = 'my_photos.png';
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-
-      downloadBtn.disabled = false;
-      downloadBtn.textContent = 'Download All';
-    }).catch(() => {
-      alert('Failed to generate image. Try again.');
-      downloadBtn.disabled = false;
-      downloadBtn.textContent = 'Download All';
-    });
-  });
-
-  buildPhotos();
+document.getElementById('close-modal').addEventListener('click', () => {
+  document.getElementById('photo-modal').style.display = 'none';
 });
 
 
-document.getElementById('retakeBtn').addEventListener('click', () => {
-  // Clear local/session storage or any saved state
-  localStorage.clear();
-  sessionStorage.clear();
-
-  // Navigate to layout.html
-  window.location.href = 'layout.html';
-});
-
-// Prevent navigating back to preview.html
-history.pushState(null, null, location.href);
-window.onpopstate = function () {
-  history.go(1);
-};
