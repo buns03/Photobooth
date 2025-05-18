@@ -86,16 +86,15 @@ function captureImage() {
 
   // 🔥 High-quality canvas size — match source crop size
   const canvas = document.createElement("canvas");
- const upscaleFactor = 2; // or 3 for even higher resolution
-canvas.width = sWidth * upscaleFactor;
-canvas.height = sHeight * upscaleFactor;
+  canvas.width = sWidth;     // match cropped source resolution
+  canvas.height = sHeight;
 
   const ctx = canvas.getContext("2d");
   ctx.filter = currentFilter;
 
   // Mirror horizontally if needed
   ctx.translate(canvas.width, 0);
-ctx.scale(-1 * upscaleFactor, upscaleFactor);
+  ctx.scale(-1, 1);
 
   ctx.drawImage(
     video,
@@ -132,10 +131,6 @@ ctx.scale(-1 * upscaleFactor, upscaleFactor);
     }, 1500);
   }
 }
-
-
-
-
 
 function renderFinalLayout() {
   layoutPreview.innerHTML = "";
