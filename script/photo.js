@@ -59,59 +59,57 @@ function takePhoto() {
   }, 1000);
 }
 
-
 function captureImage() {
-  const canvas = document.createElement("canvas");
-  
-  const width = video.videoWidth;
-  const height = video.videoHeight;
+  const videoAspectRatio = video.videoWidth / video.videoHeight;
+  const displayAspectRatio = video.clientWidth / video.clientHeight;
 
-  canvas.width = width;
-  canvas.height = height;
+  // We'll use the actual video resolution to get higher quality
+  const canvas = document.createElement("canvas");
+
+  // Match canvas size to video feed resolution
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
 
   const ctx = canvas.getContext("2d");
   ctx.filter = currentFilter;
 
+  // Mirror if needed
   ctx.translate(canvas.width, 0);
   ctx.scale(-1, 1);
 
-  const videoRatio = video.videoWidth / video.videoHeight;
-  const containerRatio = width / height;
-
   let sx, sy, sWidth, sHeight;
 
-  if (containerRatio > videoRatio) {
-    // container wider than video, so video is cropped vertically
+  if (displayAspectRatio > videoAspectRatio) {
+    // Visible container is wider than the camera feed
     sWidth = video.videoWidth;
-    sHeight = video.videoWidth / containerRatio;
+    sHeight = video.videoWidth / displayAspectRatio;
     sx = 0;
     sy = (video.videoHeight - sHeight) / 2;
   } else {
-    // container taller than video, so video is cropped horizontally
+    // Visible container is taller than the camera feed
     sHeight = video.videoHeight;
-    sWidth = video.videoHeight * containerRatio;
+    sWidth = video.videoHeight * displayAspectRatio;
     sy = 0;
     sx = (video.videoWidth - sWidth) / 2;
   }
 
-  ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, width, height);
-  // ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  // Draw only the visible portion
+  ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
 
+  // Create image from canvas
   const imgData = canvas.toDataURL("image/png");
 
-  // Create image element for preview with border
   const img = new Image();
   img.src = imgData;
   img.className = "shot-preview";
 
   const borderedFrame = document.createElement("div");
   borderedFrame.className = "photo-border";
-  borderedFrame.style.borderColor = sessionStorage.getItem("borderColor") || "#000"; // default black
+  borderedFrame.style.borderColor = sessionStorage.getItem("borderColor") || "#000";
   borderedFrame.appendChild(img);
-
   shotsContainer.appendChild(borderedFrame);
 
-  // Save the captured photo data URL to sessionStorage array
+  // Save to session
   let photos = JSON.parse(sessionStorage.getItem("photosTaken")) || [];
   photos.push(imgData);
   sessionStorage.setItem("photosTaken", JSON.stringify(photos));
@@ -119,16 +117,13 @@ function captureImage() {
   photoTaken++;
 
   if (photoTaken >= layoutCount) {
-  // Show toast
-  const toast = document.getElementById("successToast");
-  toast.classList.add("show");
-
-  // Redirect to review/download page after short delay
-  setTimeout(() => {
-    toast.classList.remove("show");
-    window.location.href = "preview.html"; // change filename if needed
-  }, 1500); // show toast for 1.5 seconds
-}
+    const toast = document.getElementById("successToast");
+    toast.classList.add("show");
+    setTimeout(() => {
+      toast.classList.remove("show");
+      window.location.href = "preview.html";
+    }, 1500);
+  }
 }
 
 
