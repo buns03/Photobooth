@@ -10,13 +10,19 @@ const flashOverlay = document.getElementById("flash");
 const layoutPreview = document.getElementById("layout-preview");
 
 // Request camera access
-navigator.mediaDevices.getUserMedia({ video: true })
-  .then(stream => {
-    video.srcObject = stream;
-  })
-  .catch(err => {
-    alert("Camera access denied: " + err);
-  });
+navigator.mediaDevices.getUserMedia({
+  video: {
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+    facingMode: "user" // or "environment" for back camera
+  }
+})
+.then(stream => {
+  video.srcObject = stream;
+})
+.catch(err => {
+  alert("Camera access denied: " + err);
+});
 
 function applyFilter(filter) {
   currentFilter = filter;
@@ -57,19 +63,19 @@ function takePhoto() {
 function captureImage() {
   const canvas = document.createElement("canvas");
   
-  const width = video.clientWidth;
-  const height = video.clientHeight;
+  const width = video.videoWidth;
+  const height = video.videoHeight;
 
   canvas.width = width;
   canvas.height = height;
-  
+
   const ctx = canvas.getContext("2d");
   ctx.filter = currentFilter;
 
   ctx.translate(canvas.width, 0);
   ctx.scale(-1, 1);
 
-   const videoRatio = video.videoWidth / video.videoHeight;
+  const videoRatio = video.videoWidth / video.videoHeight;
   const containerRatio = width / height;
 
   let sx, sy, sWidth, sHeight;
